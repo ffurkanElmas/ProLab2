@@ -17,7 +17,7 @@ namespace WinFormsApp2
 
         private const int SatirSayisi = 30;
         private const int SutunSayisi = 50;
-        private const int KareBoyutu = 20;
+        private const int KareBoyutu = 25;
 
         public static string[] mapRows;
         private char[,] harita = new char[SatirSayisi, SutunSayisi];
@@ -28,6 +28,10 @@ namespace WinFormsApp2
         private Image archerImg;
         private Image cannonImg;
         private Image iceImg;
+        private Image armoredImg;
+        private Image flyingImg;
+        private Image standardImg;
+
 
         private NotificationManager notifier;
 
@@ -35,7 +39,7 @@ namespace WinFormsApp2
 
         private System.Windows.Forms.Timer gameTimer;
 
-        public static int money = 100;
+        public static int money = 200;
         public static int health = 100;
         public static int wave = 1;
 
@@ -61,6 +65,9 @@ namespace WinFormsApp2
             archerImg = Image.FromFile(Path.Combine(basePath, "src", "Assets", "Images", "archer.png"));
             cannonImg = Image.FromFile(Path.Combine(basePath, "src", "Assets", "Images", "cannon.png"));
             iceImg = Image.FromFile(Path.Combine(basePath, "src", "Assets", "Images", "ice_tower.png"));
+            armoredImg = Image.FromFile(Path.Combine(basePath, "src", "Assets", "Images", "armored.png"));
+            flyingImg = Image.FromFile(Path.Combine(basePath, "src", "Assets", "Images", "flying.png"));
+            standardImg = Image.FromFile(Path.Combine(basePath, "src", "Assets", "Images", "standard.png"));
 
             // Pop-up panel oluştur
             popupPanel = new Panel();
@@ -141,7 +148,7 @@ namespace WinFormsApp2
             popupPanel.Height = buzBtn.Bottom + spacing;
 
             // Başlangıç düşmanı spawn
-            SpawnArmoredEnemy();
+            SpawnEnemiesAsync();
 
             // Timer başlat
             gameTimer = new System.Windows.Forms.Timer();
@@ -180,7 +187,7 @@ namespace WinFormsApp2
                 "XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXOXXXXXXXXXXXXXXX",
                 "XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXOXXXXXXXXXXXXXXX",
                 "XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXOXXXXXXXXXXXXXXX",
-                "XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXOOOOOOOOOOOOOOO9",
+                "XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXOOOOOOOOOOOOOOOE",
                 "XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX",
                 "XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX",
                 "XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX"
@@ -209,6 +216,18 @@ namespace WinFormsApp2
             }
         }
 
+        private async void SpawnEnemiesAsync()
+        {
+            SpawnArmoredEnemy();
+            await Task.Delay(2000);
+
+            SpawnFlyingEnemy();
+            await Task.Delay(2000);
+
+            SpawnStandardEnemy();
+        }
+
+
         private void SpawnArmoredEnemy()
         {
             int startX = 0;
@@ -234,32 +253,151 @@ namespace WinFormsApp2
             });
         }
 
+        private void SpawnFlyingEnemy()
+        {
+            int startX = 0;
+            int startY = 0;
+
+            for (int y = 0; y < mapRows.Length; y++)
+            {
+                for (int x = 0; x < mapRows[y].Length; x++)
+                {
+                    if (mapRows[y][x] == 'S')
+                    {
+                        startX = x;
+                        startY = y;
+                        break;
+                    }
+                }
+            }
+
+            enemyController.AddEnemy(new FlyingEnemy
+            {
+                X = startX,
+                Y = startY
+            });
+        }
+
+        private void SpawnStandardEnemy()
+        {
+            int startX = 0;
+            int startY = 0;
+
+            for (int y = 0; y < mapRows.Length; y++)
+            {
+                for (int x = 0; x < mapRows[y].Length; x++)
+                {
+                    if (mapRows[y][x] == 'S')
+                    {
+                        startX = x;
+                        startY = y;
+                        break;
+                    }
+                }
+            }
+
+            enemyController.AddEnemy(new StandardEnemy
+            {
+                X = startX,
+                Y = startY
+            });
+        }
+
+        private int goalX;
+        private int goalY;
+        private bool goalFound = false;
+
         private void GameLoop(object sender, EventArgs e)
         {
+            // İlk çalıştırmada E noktasını bul
+            if (!goalFound)
+            {
+                for (int y = 0; y < mapRows.Length; y++)
+                {
+                    for (int x = 0; x < mapRows[y].Length; x++)
+                    {
+                        if (mapRows[y][x] == 'E')
+                        {
+                            goalX = x;
+                            goalY = y;
+                            goalFound = true;
+                            break;
+                        }
+                    }
+                    if (goalFound) break;
+                }
+            }
+
+            // -------------------------
+            // 1) Düşmanları ilerlet
+            // -------------------------
+            enemyController.UpdateAll();
+
+            // -------------------------
+            // 2) Düşmanları tek tek işle
+            // -------------------------
             foreach (var enemy in enemyController.Enemies.ToList())
             {
+                // -------------------------
+                // A) Çıkış noktasına ulaştı mı?
+                // -------------------------
+
+                // Düşmanın E noktasına olan uzaklığı
+                double distToGoal = Math.Sqrt(
+                    Math.Pow(enemy.X - goalX, 2) +
+                    Math.Pow(enemy.Y - goalY, 2)
+                );
+
+                if (distToGoal < 0.3) // Tam kareye girmek zorunda değil
+                {
+                    Form1.health -= enemy.DamageToBase;
+                    notifier.ShowToast($"Base hasar aldı! (-{enemy.DamageToBase})");
+                    enemyController.Enemies.Remove(enemy);
+                    continue;
+                }
+
+                // -------------------------
+                // B) Kulelerin saldırması
+                // -------------------------
+
                 foreach (var tower in towerController.Towers)
                 {
-                    int dx = enemy.X - tower.X;
-                    int dy = enemy.Y - tower.Y;
+                    float dx = enemy.X - tower.X;
+                    float dy = enemy.Y - tower.Y;
+
                     double distance = Math.Sqrt(dx * dx + dy * dy);
 
                     if (distance <= tower.Range)
                     {
+                        float oldHealth = enemy.Health;
+
                         enemyController.TakeDamage(enemy, tower.Damage);
+
+                        // Öldüyse para ver
+                        if (enemy.IsDead && oldHealth > 0)
+                        {
+                            Form1.money += enemy.RewardOnDeath;
+                            notifier.ShowToast($"+{enemy.RewardOnDeath} para kazandın!");
+                        }
                     }
                 }
 
+                // -------------------------
+                // C) Ölen düşmanı kaldır
+                // -------------------------
                 if (enemy.IsDead)
                 {
                     enemyController.Enemies.Remove(enemy);
                 }
             }
 
-            enemyController.UpdateAll();
-
+            // -------------------------
+            // 3) Ekranı güncelle
+            // -------------------------
             Invalidate();
         }
+
+
 
 
         private void Form1_Paint(object sender, PaintEventArgs e)
@@ -276,6 +414,8 @@ namespace WinFormsApp2
                     switch (harita[y, x])
                     {
                         case 'O': g.FillRectangle(Brushes.SandyBrown, kare); break;
+                        case 'S': g.FillRectangle(Brushes.Chartreuse, kare); break;
+                        case 'E': g.FillRectangle(Brushes.Crimson, kare); break;
                         default: g.FillRectangle(Brushes.LightGreen, kare); break;
                     }
                     g.DrawRectangle(Pens.Black, kare);
@@ -309,9 +449,22 @@ namespace WinFormsApp2
             // Düşmanları çiz
             foreach (var enemy in enemyController.Enemies)
             {
-                g.FillEllipse(Brushes.DarkGray, enemy.X * KareBoyutu, enemy.Y * KareBoyutu, KareBoyutu, KareBoyutu);
+                Image img = enemy switch
+                {
+                    ArmoredEnemy => armoredImg,
+                    FlyingEnemy => flyingImg,
+                    StandardEnemy => standardImg,
+                    _ => null
+                };
+
+                if (img != null)
+                {
+                    g.DrawImage(img, enemy.X * KareBoyutu, enemy.Y * KareBoyutu, KareBoyutu, KareBoyutu);
+                }
+
                 g.DrawString(enemy.Health.ToString("0"), new Font("Arial", 8), Brushes.White, enemy.X * KareBoyutu, enemy.Y * KareBoyutu - 12);
             }
+
 
             // HUD
             int hudWidth = 11 * KareBoyutu;
@@ -326,7 +479,7 @@ namespace WinFormsApp2
 
         private void DrawTowerImage(Graphics g, Image img, int x, int y)
         {
-            int imgSize = KareBoyutu * 3;
+            int imgSize = KareBoyutu * 2;
             int posX = x * KareBoyutu + (KareBoyutu - imgSize) / 2;
             int posY = y * KareBoyutu + (KareBoyutu - imgSize) / 2;
 
