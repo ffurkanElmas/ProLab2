@@ -31,7 +31,11 @@ namespace WinFormsApp2.src.Controllers
                 Move(enemy);
 
                 if (enemy.ReachedBase)
+                {
+                    Attack(enemy); 
                     Enemies.Remove(enemy);
+                    continue;
+                }
             }
         }
 
@@ -102,6 +106,12 @@ namespace WinFormsApp2.src.Controllers
                 if (enemy.Health < 0)
                     enemy.Health = 0;
             }
+        }
+
+
+        public void Attack(IEnemy enemy)
+        {
+            Form1.health -= enemy.DamageToBase;
         }
 
 
