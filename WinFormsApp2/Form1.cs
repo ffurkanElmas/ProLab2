@@ -8,6 +8,8 @@ using WinFormsApp2.src.Models;
 using WinFormsApp2.src.Models.Towers;
 using WinFormsApp2.src.Models.Enemies;
 using WinFormsApp2.src.Interfaces;
+using System.Media;
+
 
 namespace WinFormsApp2
 {
@@ -31,7 +33,11 @@ namespace WinFormsApp2
         private Image armoredImg;
         private Image flyingImg;
         private Image standardImg;
+        private Image grassImg;
+        private Image rockImg;
+        private Image treeImg;
 
+        private SoundPlayer player;
 
         private NotificationManager notifier;
 
@@ -81,6 +87,14 @@ namespace WinFormsApp2
             armoredImg = Image.FromFile(Path.Combine(basePath, "src", "Assets", "Images", "armored.png"));
             flyingImg = Image.FromFile(Path.Combine(basePath, "src", "Assets", "Images", "flying.png"));
             standardImg = Image.FromFile(Path.Combine(basePath, "src", "Assets", "Images", "standard.png"));
+            treeImg = Image.FromFile(Path.Combine(basePath, "src", "Assets", "Images", "tree.png"));
+            rockImg = Image.FromFile(Path.Combine(basePath, "src", "Assets", "Images", "rock.png"));
+            grassImg = Image.FromFile(Path.Combine(basePath, "src", "Assets", "Images", "grass.png"));
+            string musicPath = Path.Combine(Directory.GetParent(Directory.GetCurrentDirectory()).Parent.Parent.FullName,"src", "Assets", "Music", "music.wav");
+
+            player = new SoundPlayer(musicPath);
+            player.Load();       // Müziği yükle
+            player.PlayLooping(); // Sonsuz döngüde çal
 
             // Pop-up panel oluştur
             popupPanel = new Panel();
@@ -134,7 +148,7 @@ namespace WinFormsApp2
                 Response response = towerController.AddTower(new CannonTower(popupX, popupY));
                 notifier.ShowToast(response.message);
                 if (response.success)
-                    harita[popupY, popupX] = 'T';
+                    harita[popupY, popupX] = 'C';
                 popupPanel.Visible = false;
                 Invalidate();
             };
@@ -152,7 +166,7 @@ namespace WinFormsApp2
                 Response response = towerController.AddTower(new IceTower(popupX, popupY));
                 notifier.ShowToast(response.message);
                 if (response.success)
-                    harita[popupY, popupX] = 'B';
+                    harita[popupY, popupX] = 'I';
                 popupPanel.Visible = false;
                 Invalidate();
             };
@@ -183,33 +197,33 @@ namespace WinFormsApp2
             {
                 "YYYYYYYYYYYXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX",
                 "YYYYYYYYYYYXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX",
-                "YYYYYYYYYYYXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX",
+                "YYYYYYYYYYYXXXXXXXXXXXXXXXXXXXXGXXXXXXXXXXXXXXXXXX",
                 "XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX",
-                "XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX",
+                "XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXTXXXXXXXX",
                 "XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX",
                 "XXXXXXXXXXXXXXXXXXXXXXXXXXOOOOOOOOOXXXXXXXXXXXXXXX",
                 "XXXXXXXXXXXXXXXXXXXXXXXXXXOXXXXXXXOXXXXXXXXXXXXXXX",
+                "XXXXXXXXXXXXXXXXXXXXXXXGXXOXXXXXXXOXXXXXXXXXXRXXXX",
                 "XXXXXXXXXXXXXXXXXXXXXXXXXXOXXXXXXXOXXXXXXXXXXXXXXX",
-                "XXXXXXXXXXXXXXXXXXXXXXXXXXOXXXXXXXOXXXXXXXXXXXXXXX",
-                "XXXXXXXXXXXXXXXXXXXXXXXXXXOXXXXXXXOXXXXXXXXXXXXXXX",
+                "XXXXXXXXXXXXXXXXXXXXXXXXXXOXXXXRXXOXXXXXXXXXXXXXXX",
                 "XXXXXXXXXXXXXXXOOOOOOOOOOOOXXXXXXXOXXXXXXXXXXXXXXX",
+                "XXXXXXXTXXXXXXXOXXXXXGXXXXXXXXXXXXOXXXXXXXXXXXXXXX",
+                "XXXXXXXXXXXXXXXOXXXXXXXXXXXXXXXXXXOXXXXXRXXXXXXXXX",
                 "XXXXXXXXXXXXXXXOXXXXXXXXXXXXXXXXXXOXXXXXXXXXXXXXXX",
+                "XXXXXXXXXXXXXXXOXXXXXXXRXXXXXXXXXXOXXXXXXXXXXXXXXX",
+                "XXXXXXXXXXXXXXXOXXXXXXXXXXXXXXXXXXOXXXXXXXXXTXXXXX",
+                "XXXXXXXXXGXXXXXOXXXXXXXXXXXXXXXXXXOXXXXXXXXXXXXXXX",
                 "XXXXXXXXXXXXXXXOXXXXXXXXXXXXXXXXXXOXXXXXXXXXXXXXXX",
-                "XXXXXXXXXXXXXXXOXXXXXXXXXXXXXXXXXXOXXXXXXXXXXXXXXX",
-                "XXXXXXXXXXXXXXXOXXXXXXXXXXXXXXXXXXOXXXXXXXXXXXXXXX",
-                "XXXXXXXXXXXXXXXOXXXXXXXXXXXXXXXXXXOXXXXXXXXXXXXXXX",
-                "XXXXXXXXXXXXXXXOXXXXXXXXXXXXXXXXXXOXXXXXXXXXXXXXXX",
-                "XXXXXXXXXXXXXXXOXXXXXXXXXXXXXXXXXXOXXXXXXXXXXXXXXX",
-                "XXXXXXXXXXXXXXXOXXXXXXXXXXXXXXXXXXOXXXXXXXXXXXXXXX",
-                "XXXXXXXXXXXXXXXOXXXXXXXXXXXXXXXXXXOXXXXXXXXXXXXXXX",
-                "SOOOOOOOOOOOOOOOXXXXXXXXXXXXXXXXXXOXXXXXXXXXXXXXXX",
+                "XXXXXXXXXXXXXXXOXXXXXXXXXXXXXRXXXXOXXXXXXXXXXXXXXX",
+                "XXXXXXXXXXXXXXXOXXXXXXXXXXXXXXXXXXOXXXXXXXGXXXXXXX",
+                "SOOOOOOOOOOOOOOOXXXXTXXXXXXXXXXXXXOXXXXXXXXXXXXXXX",
                 "XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXOXXXXXXXXXXXXXXX",
+                "XXXXXXXRXXXXXXXXXXXXXXXXXXXXXXXXXXOXXXXXXXXXXXXXXX",
+                "XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXOXXXXXXXTXXXXXXX",
                 "XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXOXXXXXXXXXXXXXXX",
-                "XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXOXXXXXXXXXXXXXXX",
-                "XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXOXXXXXXXXXXXXXXX",
-                "XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXOOOOOOOOOOOOOOOE",
+                "XXXXXXXXXXXXXXXRXXXXXXXXXXXXXXXXXXOOOOOOOOOOOOOOOE",
                 "XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX",
-                "XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX",
+                "XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXTXXXXXXX",
                 "XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX"
             };
 
@@ -446,8 +460,8 @@ namespace WinFormsApp2
             {
                 for (int x = 0; x < SutunSayisi; x++)
                 {
-                    if (harita[y, x] == 'Y') continue;
                     Rectangle kare = new Rectangle(x * KareBoyutu, y * KareBoyutu, KareBoyutu, KareBoyutu);
+
                     switch (harita[y, x])
                     {
                         case 'O': g.FillRectangle(Brushes.SandyBrown, kare); break;
@@ -455,6 +469,7 @@ namespace WinFormsApp2
                         case 'E': g.FillRectangle(Brushes.Crimson, kare); break;
                         default: g.FillRectangle(Brushes.LightGreen, kare); break;
                     }
+
                     g.DrawRectangle(Pens.Black, kare);
                 }
             }
@@ -470,15 +485,49 @@ namespace WinFormsApp2
                         DrawTowerImage(g, archerImg, x, y);
                         CizMenzil(g, x, y, Color.FromArgb(80, Color.Red));
                     }
-                    else if (c == 'T')
+                    else if (c == 'C')
                     {
                         DrawTowerImage(g, cannonImg, x, y);
                         CizMenzil(g, x, y, Color.FromArgb(80, Color.Gray));
                     }
-                    else if (c == 'B')
+                    else if (c == 'I')
                     {
                         DrawTowerImage(g, iceImg, x, y);
                         CizMenzil(g, x, y, Color.FromArgb(80, Color.CornflowerBlue));
+                    }
+                }
+            }
+
+            for (int y = 0; y < SatirSayisi; y++)
+            {
+                for (int x = 0; x < SutunSayisi; x++)
+                {
+                    
+
+                    
+                    char c = harita[y, x];
+                    if (c == 'G')
+                    {
+                        int imgSize = KareBoyutu * 1;
+                        int posX = x * KareBoyutu + (KareBoyutu - imgSize) / 2;
+                        int posY = y * KareBoyutu + (KareBoyutu - imgSize) / 2;
+                        g.DrawImage(grassImg, posX, posY, imgSize, imgSize);
+                    }
+                    else if (c == 'T')
+                    {
+                        int imgSize = (int)(KareBoyutu * 1.5);
+                        int posX = x * KareBoyutu + (KareBoyutu - imgSize) / 2;
+                        int posY = y * KareBoyutu + (KareBoyutu - imgSize) / 2;
+                        g.DrawImage(treeImg, posX, posY, imgSize, imgSize);
+
+                    }
+                    else if (c == 'R')
+                    {
+                        int imgSize = (int)(KareBoyutu * 1.5);
+                        int posX = x * KareBoyutu + (KareBoyutu - imgSize) / 2;
+                        int posY = y * KareBoyutu + (KareBoyutu - imgSize) / 2;
+                        g.DrawImage(rockImg, posX, posY, imgSize, imgSize);
+
                     }
                 }
             }
@@ -495,13 +544,10 @@ namespace WinFormsApp2
                 };
 
                 if (img != null)
-                {
                     g.DrawImage(img, enemy.X * KareBoyutu, enemy.Y * KareBoyutu, KareBoyutu, KareBoyutu);
-                }
 
                 g.DrawString(enemy.Health.ToString("0"), new Font("Arial", 8), Brushes.White, enemy.X * KareBoyutu, enemy.Y * KareBoyutu - 12);
             }
-
 
             // HUD
             int hudWidth = 11 * KareBoyutu;
@@ -513,6 +559,7 @@ namespace WinFormsApp2
             g.DrawString($"Can: {health}", hudFont, hudBrush, 2, 18);
             g.DrawString($"Dalga: {wave}", hudFont, hudBrush, 2, 34);
         }
+
 
         private void DrawTowerImage(Graphics g, Image img, int x, int y)
         {
