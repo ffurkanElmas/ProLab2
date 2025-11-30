@@ -8,12 +8,14 @@ namespace WinFormsApp2.src.Interfaces
 {
     public interface ITower
     {
-        int X { get; set; }                          
+        int X { get; set; }
         int Y { get; set; }
-        int Range { get; }                          
-        int Cost { get; }                            
-        float Damage { get; }                    
-        float FireRate { get; }                      
-        float FireCooldown { get; set; }                        
+        int Range { get; }
+        int Cost { get; }
+        float Damage { get; }
+        float FireRate { get; }
+        float FireCooldown { get; set; }
+        bool CanAttack(IEnemy enemy);
+        void Attack(List<IEnemy> enemies);
     }
 }

@@ -363,7 +363,7 @@ namespace WinFormsApp2
 
         private void GameLoop(object sender, EventArgs e)
         {
-            // İlk çalıştırmada E noktasını bul
+            // 1) Hedef noktayı bul
             if (!goalFound)
             {
                 for (int y = 0; y < mapRows.Length; y++)
@@ -382,27 +382,40 @@ namespace WinFormsApp2
                 }
             }
 
-            // -------------------------
-            // 1) Düşmanları ilerlet
-            // -------------------------
+            // 2) Düşmanları ilerlet
             enemyController.UpdateAll();
 
-            // -------------------------
-            // 2) Düşmanları tek tek işle
-            // -------------------------
+            // 3) Düşmanları slow süresi için update et
+            foreach (var enemy in enemyController.Enemies)
+            {
+                if (enemy.IsSlowed)
+                {
+                    enemy.SlowTimer -= 0.15f; // gameTimer.Interval = 150ms
+                    if (enemy.SlowTimer <= 0)
+                    {
+                        enemy.IsSlowed = false;
+                        enemy.Speed = enemy.OriginalSpeed;
+                    }
+                }
+            }
+
+            // 4) Kulelerin saldırısı
+            foreach (var tower in towerController.Towers)
+            {
+                tower.Attack(enemyController.Enemies);
+
+                // Cooldown update
+                if (tower.FireCooldown > 0)
+                    tower.FireCooldown -= 0.15f; // interval ile uyumlu
+                if (tower.FireCooldown < 0) tower.FireCooldown = 0;
+            }
+
+            // 5) Düşmanları tek tek kontrol et
             foreach (var enemy in enemyController.Enemies.ToList())
             {
-                // -------------------------
-                // A) Çıkış noktasına ulaştı mı?
-                // -------------------------
-
-                // Düşmanın E noktasına olan uzaklığı
-                double distToGoal = Math.Sqrt(
-                    Math.Pow(enemy.X - goalX, 2) +
-                    Math.Pow(enemy.Y - goalY, 2)
-                );
-
-                if (distToGoal < 0.3) // Tam kareye girmek zorunda değil
+                // Hedefe ulaştı mı?
+                double distToGoal = Math.Sqrt(Math.Pow(enemy.X - goalX, 2) + Math.Pow(enemy.Y - goalY, 2));
+                if (distToGoal < 0.3)
                 {
                     Form1.health -= enemy.DamageToBase;
                     notifier.ShowToast($"Base hasar aldı! (-{enemy.DamageToBase})");
@@ -410,48 +423,18 @@ namespace WinFormsApp2
                     continue;
                 }
 
-                // -------------------------
-                // B) Kulelerin saldırması
-                // -------------------------
-
-                foreach (var tower in towerController.Towers)
-                {
-                    float dx = enemy.X - tower.X;
-                    float dy = enemy.Y - tower.Y;
-
-                    double distance = Math.Sqrt(dx * dx + dy * dy);
-
-                    if (distance <= tower.Range)
-                    {
-                        float oldHealth = enemy.Health;
-
-                        enemyController.TakeDamage(enemy, tower.Damage);
-
-                        // Öldüyse para ver
-                        if (enemy.IsDead && oldHealth > 0)
-                        {
-                            Form1.money += enemy.RewardOnDeath;
-                            notifier.ShowToast($"+{enemy.RewardOnDeath} para kazandın!");
-                        }
-                    }
-                }
-
-                // -------------------------
-                // C) Ölen düşmanı kaldır
-                // -------------------------
+                // Öldüyse para ver
                 if (enemy.IsDead)
                 {
+                    Form1.money += enemy.RewardOnDeath;
+                    notifier.ShowToast($"+{enemy.RewardOnDeath} para kazandın!");
                     enemyController.Enemies.Remove(enemy);
                 }
             }
 
-            // -------------------------
-            // 3) Ekranı güncelle
-            // -------------------------
+            // 6) Ekranı güncelle
             Invalidate();
         }
-
-
 
 
         private void Form1_Paint(object sender, PaintEventArgs e)

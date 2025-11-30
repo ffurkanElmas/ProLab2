@@ -1,8 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using WinFormsApp2.src.Interfaces;
 
 namespace WinFormsApp2.src.Models.Towers
@@ -12,10 +10,10 @@ namespace WinFormsApp2.src.Models.Towers
         public int X { get; set; }
         public int Y { get; set; }
 
-        public int Range => 4;             // 9x9 kare = 4 yarıçap
+        public int Range => 4;
         public int Cost => 50;
-        public float Damage => 20f;        // Temel hasar örnek
-        public float FireRate => 1f;       // 1 saniye
+        public float Damage => 20f;
+        public float FireRate => 1f;
         public float FireCooldown { get; set; } = 0;
 
         public ArcherTower(int x, int y)
@@ -24,34 +22,33 @@ namespace WinFormsApp2.src.Models.Towers
             Y = y;
         }
 
-        public bool CanAttack(IEnemy enemy)
-        {
-            return true; // Uçan / zırhlı / standart → hepsine saldırır
-        }
+        public bool CanAttack(IEnemy enemy) => true; // Tüm düşmanlar
 
         public void Attack(List<IEnemy> enemies)
         {
             if (FireCooldown > 0) return;
 
-            // Menzildeki tüm düşmanları bul
-            var hedefler = enemies
+            var targets = enemies
                 .Where(e => !e.IsDead &&
                             Math.Abs(e.X - X) <= Range &&
                             Math.Abs(e.Y - Y) <= Range)
                 .ToList();
 
-            if (hedefler.Count == 0)
-                return;
+            if (targets.Count == 0) return;
 
-            // Üsse en yakın olan düşman: X en büyük olan
-            var hedef = hedefler.OrderByDescending(e => e.X).First();
+            foreach (var e in targets)
+            {
+                float dmg = Damage;
 
-            float dmg = Damage;
+                if (e.IsArmored)
+                    dmg *= 0.5f; // Zırhlıya %50 az
 
-            if (hedef.IsArmored)
-                dmg *= 0.5f;   // Zırhlıya %50 az hasar
+                // Hasar formülü
+                dmg *= 1 - (100f / (100f + 100f)); // Zırh = 100 varsayım
 
-            //hedef.TakeDamage(dmg);
+                e.Health -= dmg;
+                if (e.Health < 0) e.Health = 0;
+            }
 
             FireCooldown = FireRate;
         }
