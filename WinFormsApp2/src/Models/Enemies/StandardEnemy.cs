@@ -13,7 +13,7 @@ namespace WinFormsApp2.src.Models.Enemies
         public int X { get; set; }
         public int Y { get; set; }
         public float Health { get; set; } = 50;
-        public float Speed { get; set; } = 1f;
+        public float Speed { get; set; } = 0.5f;
         public bool IsFlying => false;
         public bool IsArmored => false;
         public bool IsDead => Health <= 0;

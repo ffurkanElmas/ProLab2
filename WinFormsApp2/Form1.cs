@@ -43,6 +43,19 @@ namespace WinFormsApp2
         public static int health = 100;
         public static int wave = 1;
 
+        // ✅ Buraya ekle:
+        private List<Wave> waves;          // Dalga listesi
+        private int currentWaveIndex = 0;  // Hangi dalgadayız
+
+        // Dalga sınıfı
+        public class Wave
+        {
+            public int ArmoredCount;
+            public int FlyingCount;
+            public int StandardCount;
+            public int SpawnIntervalMs;
+        }
+
         public Form1()
         {
             this.Width = SutunSayisi * KareBoyutu + 40;
@@ -147,8 +160,15 @@ namespace WinFormsApp2
 
             popupPanel.Height = buzBtn.Bottom + spacing;
 
-            // Başlangıç düşmanı spawn
-            SpawnEnemiesAsync();
+            // DALGALARIN TANIMLANMASI
+            waves = new List<Wave>
+        {
+            new Wave { ArmoredCount = 2, FlyingCount = 1, StandardCount = 3, SpawnIntervalMs = 1000 },
+            new Wave { ArmoredCount = 3, FlyingCount = 2, StandardCount = 5, SpawnIntervalMs = 1000 },
+            new Wave { ArmoredCount = 5, FlyingCount = 3, StandardCount = 7, SpawnIntervalMs = 1000 }
+        };
+
+            StartWaves(); // Dalga mekaniklerini başlat
 
             // Timer başlat
             gameTimer = new System.Windows.Forms.Timer();
@@ -216,16 +236,50 @@ namespace WinFormsApp2
             }
         }
 
-        private async void SpawnEnemiesAsync()
+        private async Task SpawnWaveAsync(Wave wave)
         {
-            SpawnArmoredEnemy();
-            await Task.Delay(2000);
+            // Armored düşmanları spawn et
+            for (int i = 0; i < wave.ArmoredCount; i++)
+            {
+                SpawnArmoredEnemy();
+                await Task.Delay(wave.SpawnIntervalMs);
+            }
 
-            SpawnFlyingEnemy();
-            await Task.Delay(2000);
+            // Flying düşmanları spawn et
+            for (int i = 0; i < wave.FlyingCount; i++)
+            {
+                SpawnFlyingEnemy();
+                await Task.Delay(wave.SpawnIntervalMs);
+            }
 
-            SpawnStandardEnemy();
+            // Standard düşmanları spawn et
+            for (int i = 0; i < wave.StandardCount; i++)
+            {
+                SpawnStandardEnemy();
+                await Task.Delay(wave.SpawnIntervalMs);
+            }
         }
+
+        private async void StartWaves()
+        {
+            while (currentWaveIndex < waves.Count)
+            {
+                Wave currentWave = waves[currentWaveIndex];
+                wave = currentWaveIndex + 1; // HUD için dalga numarası
+
+                await SpawnWaveAsync(currentWave);
+
+                // Tüm düşmanlar öldükten sonra bir sonraki dalgaya geç
+                while (enemyController.Enemies.Count > 0)
+                {
+                    await Task.Delay(500); // Küçük bekleme, game loop devam eder
+                }
+
+                currentWaveIndex++;
+            }
+        }
+
+
 
 
         private void SpawnArmoredEnemy()
