@@ -18,9 +18,9 @@ namespace WinFormsApp2.src.Interfaces
         bool IsArmored { get; }              
         bool IsDead { get;}                
         int RewardOnDeath { get;}       
-        int DamageToBase { get;}           
+        int DamageToBase { get; }
         bool ReachedBase { get; set; }
-
+        float MoveAccumulator { get; set; }
         Direction LastMove { get; set; }
 
     }

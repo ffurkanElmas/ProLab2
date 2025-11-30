@@ -13,13 +13,14 @@ namespace WinFormsApp2.src.Models.Enemies
         public int X { get; set; }
         public int Y { get; set; }
         public float Health { get; set; } = 75;   
-        public float Speed { get; set; } = 25;    
+        public float Speed { get; set; } = 0.5f;    
         public bool IsFlying => false;
         public bool IsArmored => true;
         public bool IsDead => Health <= 0;
         public int RewardOnDeath => 20;
         public int DamageToBase => 10;
         public bool ReachedBase { get; set; }
+        public float MoveAccumulator { get; set; } = 0;
         Direction LastMove { get; set; } = Direction.Right;
         Direction IEnemy.LastMove { get => LastMove; set => LastMove = value; }
     }
