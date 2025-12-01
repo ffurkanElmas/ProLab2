@@ -291,6 +291,17 @@ namespace WinFormsApp2
 
                 currentWaveIndex++;
             }
+
+            await Task.Delay(1000); // Son düşman animasyonu için küçük bekleme
+
+            if (Form1.health > 0)
+            {
+                MessageBox.Show("Tebrikler! Oyunu kazandınız!", "Kazandın", MessageBoxButtons.OK, MessageBoxIcon.Information);
+            }
+            else
+            {
+                MessageBox.Show("Oyunu kaybettiniz!", "Kaybettin", MessageBoxButtons.OK, MessageBoxIcon.Error);
+            }
         }
 
 
@@ -448,6 +459,15 @@ namespace WinFormsApp2
 
             // 6) Ekranı güncelle
             Invalidate();
+
+            // 7) Can bitti mi?
+            if (Form1.health <= 0)
+            {
+                gameTimer.Stop();
+                MessageBox.Show("Oyunu kaybettiniz!", "Kaybettin", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                this.Close(); // veya Restart logic
+                return;
+            }
         }
 
 
