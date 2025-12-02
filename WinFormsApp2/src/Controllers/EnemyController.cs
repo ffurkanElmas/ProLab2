@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 using WinFormsApp2.src.Models;
 using WinFormsApp2.src.Interfaces;
 using WinFormsApp2.src.Enums;
+using WinFormsApp2.src.Services; // LOG EKLEMEK İÇİN GEREKLİ
 
 namespace WinFormsApp2.src.Controllers
 {
@@ -22,6 +23,9 @@ namespace WinFormsApp2.src.Controllers
         public void AddEnemy(IEnemy enemy)
         {
             Enemies.Add(enemy);
+
+            // 🔵 LOG: Düşman oyuna girdi
+            LogsManager.Log($"Düşman spawn oldu: {enemy.Type} ({enemy.X},{enemy.Y}) HP:{enemy.Health}");
         }
 
         public void UpdateAll()
@@ -30,9 +34,12 @@ namespace WinFormsApp2.src.Controllers
             {
                 Move(enemy);
 
+                // 🔵 LOG: Düşman kaleye ulaştı
                 if (enemy.ReachedBase)
                 {
-                    Attack(enemy); 
+
+                    Attack(enemy);
+
                     Enemies.Remove(enemy);
                     continue;
                 }
@@ -41,20 +48,16 @@ namespace WinFormsApp2.src.Controllers
 
         private void Move(IEnemy enemy)
         {
-            // Hız puanını ekle
             enemy.MoveAccumulator += enemy.Speed;
 
-            // Yeterli puan yoksa hareket etme
             if (enemy.MoveAccumulator < 1f)
                 return;
 
-            // 1 karelik hareket hakkı kadar azalt
             enemy.MoveAccumulator -= 1f;
 
             int x = enemy.X;
             int y = enemy.Y;
 
-            // Sağ
             if (x + 1 < map[y].Length && map[y][x + 1] == 'O')
             {
                 enemy.X++;
@@ -62,14 +65,12 @@ namespace WinFormsApp2.src.Controllers
                 return;
             }
 
-            // Bitiş (E)
             if (x + 1 < map[y].Length && map[y][x + 1] == 'E')
             {
                 enemy.ReachedBase = true;
                 return;
             }
 
-            // Aşağı
             if (enemy.LastMove != Direction.Up &&
                 y + 1 < map.Length &&
                 map[y + 1][x] == 'O')
@@ -79,7 +80,6 @@ namespace WinFormsApp2.src.Controllers
                 return;
             }
 
-            // Yukarı
             if (enemy.LastMove != Direction.Down &&
                 y - 1 >= 0 &&
                 map[y - 1][x] == 'O')
@@ -89,7 +89,6 @@ namespace WinFormsApp2.src.Controllers
                 return;
             }
 
-            // Sol (zorunlu durum)
             if (x - 1 >= 0 && map[y][x - 1] == 'O')
             {
                 enemy.X--;
@@ -97,26 +96,30 @@ namespace WinFormsApp2.src.Controllers
             }
         }
 
-
         public void TakeDamage(IEnemy enemy, float damage)
         {
-            if (!enemy.IsDead)
+            if (enemy.IsDead) return;
+
+            enemy.Health -= damage;
+            if (enemy.Health < 0)
+                enemy.Health = 0;
+
+            // 🔵 LOG: Hasar bilgisi
+            LogsManager.Log($"Düşman hasar aldı: {enemy.Type} -{damage} dmg (Kalan HP: {enemy.Health})");
+
+            // 🔴 Öldüyse logla
+            if (enemy.Health == 0 && !enemy.IsDead)
             {
-                enemy.Health -= damage;
-                if (enemy.Health < 0)
-                    enemy.Health = 0;
+                LogsManager.Log($"☠️ Düşman öldü: {enemy.Type} Para: +{enemy.RewardOnDeath}");
             }
         }
 
-
         public void Attack(IEnemy enemy)
         {
+            // 🔵 LOG: Kaleye vurdu
+            LogsManager.Log($"🏰 Kale hasar aldı: {enemy.Type} (-{enemy.DamageToBase} HP)");
+
             Form1.health -= enemy.DamageToBase;
         }
-
-
-
-
-
     }
 }

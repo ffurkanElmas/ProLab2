@@ -2,14 +2,15 @@
 using System.Collections.Generic;
 using System.Linq;
 using WinFormsApp2.src.Interfaces;
+using WinFormsApp2.src.Services;
 
 namespace WinFormsApp2.src.Models.Towers
 {
     public class ArcherTower : ITower
     {
+        public string Type => "Okçu Kulesi";
         public int X { get; set; }
         public int Y { get; set; }
-
         public int Range => 4;
         public int Cost => 50;
         public float Damage => 20f;
@@ -48,6 +49,10 @@ namespace WinFormsApp2.src.Models.Towers
 
                 e.Health -= dmg;
                 if (e.Health < 0) e.Health = 0;
+
+                LogsManager.Log($"{Type} → {e.Type} düşmanına {dmg:0} hasar verdi! Kalan HP: {e.Health:0} (Konum: {e.X},{e.Y})");
+
+
             }
 
             FireCooldown = FireRate;

@@ -2,14 +2,15 @@
 using System.Collections.Generic;
 using System.Linq;
 using WinFormsApp2.src.Interfaces;
+using WinFormsApp2.src.Services;
 
 namespace WinFormsApp2.src.Models.Towers
 {
     public class CannonTower : ITower
     {
+        public string Type => "Top";
         public int X { get; set; }
         public int Y { get; set; }
-
         public int Range => 4;
         public int Cost => 75;
         public float Damage => 40f;
@@ -37,7 +38,6 @@ namespace WinFormsApp2.src.Models.Towers
 
             if (targets.Count == 0) return;
 
-            // En yakın hedef
             var center = targets.OrderByDescending(e => e.X).First();
 
             foreach (var e in enemies)
@@ -48,9 +48,13 @@ namespace WinFormsApp2.src.Models.Towers
                 {
                     float dmg = Damage;
                     if (e.IsArmored)
-                        dmg *= 1 - (100f / (100f + 100f)); // Zırh formülü
+                        dmg *= 1 - (100f / (100f + 100f));
+
                     e.Health -= dmg;
                     if (e.Health < 0) e.Health = 0;
+
+                    // 🔥 Log
+                    LogsManager.Log($"{Type} → {e.Type} düşmanına {dmg:0} hasar verdi! Kalan HP: {e.Health:0} (Konum: {e.X},{e.Y})");
                 }
             }
 

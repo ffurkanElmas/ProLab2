@@ -36,6 +36,7 @@ namespace WinFormsApp2
         private Image grassImg;
         private Image rockImg;
         private Image treeImg;
+        private Image mainCastleImg;
 
         private SoundPlayer player;
 
@@ -90,6 +91,7 @@ namespace WinFormsApp2
             treeImg = Image.FromFile(Path.Combine(basePath, "src", "Assets", "Images", "tree.png"));
             rockImg = Image.FromFile(Path.Combine(basePath, "src", "Assets", "Images", "rock.png"));
             grassImg = Image.FromFile(Path.Combine(basePath, "src", "Assets", "Images", "grass.png"));
+            mainCastleImg = Image.FromFile(Path.Combine(basePath, "src", "Assets", "Images", "main_castle.png"));
             string musicPath = Path.Combine(Directory.GetParent(Directory.GetCurrentDirectory()).Parent.Parent.FullName,"src", "Assets", "Music", "music.wav");
 
             player = new SoundPlayer(musicPath);
@@ -178,9 +180,8 @@ namespace WinFormsApp2
             waves = new List<Wave>
         {
             new Wave { ArmoredCount = 2, FlyingCount = 1, StandardCount = 3, SpawnIntervalMs = 1000 },
-            new Wave { ArmoredCount = 3, FlyingCount = 2, StandardCount = 5, SpawnIntervalMs = 1000 },
-            new Wave { ArmoredCount = 5, FlyingCount = 3, StandardCount = 7, SpawnIntervalMs = 1000 }
-        };
+            new Wave { ArmoredCount = 3, FlyingCount = 2, StandardCount = 5, SpawnIntervalMs = 1000 }
+            };
 
             StartWaves(); // Dalga mekaniklerini başlat
 
@@ -297,10 +298,12 @@ namespace WinFormsApp2
             if (Form1.health > 0)
             {
                 MessageBox.Show("Tebrikler! Oyunu kazandınız!", "Kazandın", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                LogsManager.Log($"OYUNU KAZANDINIZ. Kalan can: {Form1.health}, Toplam para: {Form1.money}");
             }
             else
             {
                 MessageBox.Show("Oyunu kaybettiniz!", "Kaybettin", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                LogsManager.Log($"OYUNU KAYBETTİNİZ. Kalan can: {Form1.health}, Toplam para: {Form1.money}");
             }
         }
 
@@ -453,6 +456,7 @@ namespace WinFormsApp2
                 {
                     Form1.money += enemy.RewardOnDeath;
                     notifier.ShowToast($"+{enemy.RewardOnDeath} para kazandın!");
+                    LogsManager.Log($"{enemy.Type} düşmanı öldü! +{enemy.RewardOnDeath} para kazanıldı. Kalan can: {Form1.health}, Toplam para: {Form1.money}");
                     enemyController.Enemies.Remove(enemy);
                 }
             }
@@ -547,6 +551,14 @@ namespace WinFormsApp2
                         int posX = x * KareBoyutu + (KareBoyutu - imgSize) / 2;
                         int posY = y * KareBoyutu + (KareBoyutu - imgSize) / 2;
                         g.DrawImage(rockImg, posX, posY, imgSize, imgSize);
+
+                    }
+                    else if (c == 'E')
+                    {
+                        int imgSize = (int)(KareBoyutu * 2);
+                        int posX = x * KareBoyutu + (KareBoyutu - imgSize) / 2;
+                        int posY = y * KareBoyutu + (KareBoyutu - imgSize) / 2;
+                        g.DrawImage(mainCastleImg, posX, posY, imgSize, imgSize);
 
                     }
                 }

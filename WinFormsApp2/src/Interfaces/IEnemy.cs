@@ -10,6 +10,7 @@ namespace WinFormsApp2.src.Interfaces
 {
     public interface IEnemy
     {
+        string Type { get; }
         int X { get; set; }
         int Y { get; set; }
         float Health { get; set; }

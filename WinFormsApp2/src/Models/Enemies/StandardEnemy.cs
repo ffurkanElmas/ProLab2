@@ -10,6 +10,7 @@ namespace WinFormsApp2.src.Models.Enemies
 {
     public class StandardEnemy : IEnemy
     {
+        public string Type => "Barbar";
         public int X { get; set; }
         public int Y { get; set; }
         public float Health { get; set; } = 50;

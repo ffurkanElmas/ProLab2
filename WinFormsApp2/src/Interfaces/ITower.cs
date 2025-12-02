@@ -8,6 +8,7 @@ namespace WinFormsApp2.src.Interfaces
 {
     public interface ITower
     {
+        string Type { get; }
         int X { get; set; }
         int Y { get; set; }
         int Range { get; }
